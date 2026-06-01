@@ -1,0 +1,6 @@
+{
+  "name": "Treat Tab",
+  "description": "A mobile-first sweet shop tab and ledger manager for tracking customer tabs, candy inventory, sales, and outstanding balances with no-scroll design.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
