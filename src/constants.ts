@@ -6,7 +6,8 @@ export type ModalType =
   | 'add-payment'
   | 'add-customer'
   | 'add-product'
-  | 'reset-confirm';
+  | 'reset-confirm'
+  | 'settings';
 
 export const WEEK_REVENUE_GOAL = 1500;
 export const PRODUCT_CATEGORIES = ['Candy', 'Ice Cream', 'Cookies', 'Cakes', 'Other'] as const;

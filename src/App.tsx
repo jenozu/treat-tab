@@ -14,6 +14,7 @@ import AddProductModal from './modals/AddProductModal';
 import EditCustomerModal from './modals/EditCustomerModal';
 import EditProductModal from './modals/EditProductModal';
 import ResetModal from './modals/ResetModal';
+import SettingsModal from './modals/SettingsModal';
 import { Sparkles, X } from 'lucide-react';
 
 function AppShell() {
@@ -54,6 +55,7 @@ function AppShell() {
         {activeModal === 'add-customer' && <AddCustomerModal />}
         {activeModal === 'add-product' && <AddProductModal />}
         {activeModal === 'reset-confirm' && <ResetModal />}
+        {activeModal === 'settings' && <SettingsModal />}
         {editingCustomerId !== null && <EditCustomerModal />}
         {editingProductId !== null && <EditProductModal />}
       </div>

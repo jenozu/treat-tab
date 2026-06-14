@@ -22,6 +22,8 @@ interface AppContextValue {
   prefilledPaymentCustomerId: string;
   prefilledPaymentAmount: string;
   openPaymentModal: (customerId: string, amount: string) => void;
+  weeklyGoal: number;
+  setWeeklyGoal: (goal: number) => void;
   buzzStatus: string | null;
   triggerBuzzReminder: (customerName: string) => void;
   globalError: string | null;
@@ -63,6 +65,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [prefilledPaymentAmount, setPrefilledPaymentAmount] = useState('');
   const [buzzStatus, setBuzzStatus] = useState<string | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [weeklyGoal, setWeeklyGoalState] = useState<number>(() => {
+    const stored = localStorage.getItem('treat_tab_weekly_goal');
+    const parsed = stored ? parseFloat(stored) : NaN;
+    return isNaN(parsed) || parsed <= 0 ? 1500 : parsed;
+  });
+
+  const setWeeklyGoal = (goal: number) => {
+    setWeeklyGoalState(goal);
+    localStorage.setItem('treat_tab_weekly_goal', goal.toString());
+  };
 
   useEffect(() => {
     async function initData() {
@@ -311,6 +323,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         activeTab, activeModal, setActiveTab, setActiveModal,
         editingCustomerId, editingProductId, setEditingCustomerId, setEditingProductId,
         prefilledPaymentCustomerId, prefilledPaymentAmount, openPaymentModal,
+        weeklyGoal, setWeeklyGoal,
         buzzStatus, triggerBuzzReminder,
         globalError, clearGlobalError,
         handleAddCustomer, handleAddProduct, handleRecordSale, handleRecordPayment,

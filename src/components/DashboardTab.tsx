@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import { TrendingUp, AlertCircle, Coins, Percent, ShoppingBag, CreditCard } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { WEEK_REVENUE_GOAL } from '../constants';
 
 export default function DashboardTab() {
   const {
     customers,
     products,
     sales,
+    weeklyGoal,
     setActiveTab,
     setActiveModal,
   } = useApp();
@@ -30,11 +30,9 @@ export default function DashboardTab() {
     });
     const totalProductProfits = totalSalesVal - calculatedCost;
     const averageMarginPercent = totalSalesVal > 0 ? Math.round((totalProductProfits / totalSalesVal) * 100) : 0;
-    const breakEvenProgressPercent = Math.min(Math.round((totalSalesVal / WEEK_REVENUE_GOAL) * 100), 100);
+    const breakEvenProgressPercent = Math.min(Math.round((totalSalesVal / weeklyGoal) * 100), 100);
     return { averageMarginPercent, breakEvenProgressPercent };
-  }, [sales, products, totalSalesVal]);
-
-  const currentWeekGoal = WEEK_REVENUE_GOAL;
+  }, [sales, products, totalSalesVal, weeklyGoal]);
 
   return (
     <div className="space-y-4 animate-[fadeIn_0.15s_ease-out]">
@@ -150,7 +148,7 @@ export default function DashboardTab() {
           ></div>
         </div>
         <p className="text-[10px] font-semibold text-black/80">
-          Goal: ${currentWeekGoal} target. {currentWeekGoal - totalSalesVal > 0 ? `$${(currentWeekGoal - totalSalesVal).toFixed(2)} to cover.` : "Break-even solved!"}
+          Goal: ${weeklyGoal.toLocaleString()} target. {weeklyGoal - totalSalesVal > 0 ? `$${(weeklyGoal - totalSalesVal).toFixed(2)} to cover.` : "Break-even solved!"}
         </p>
       </div>
 
