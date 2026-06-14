@@ -10,11 +10,42 @@ export default function LogPaymentModal() {
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'E-transfer'>('Cash');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
+  const [amountError, setAmountError] = useState('');
 
   useEffect(() => {
     setSelectedCustomerIdForPayment(prefilledPaymentCustomerId);
     setPaymentAmount(prefilledPaymentAmount);
+    setAmountError('');
   }, [prefilledPaymentCustomerId, prefilledPaymentAmount]);
+
+  const selectedCustomer = customers.find(c => c.id === selectedCustomerIdForPayment);
+  const outstanding = selectedCustomer?.outstandingBalance ?? 0;
+
+  function validateAmount(raw: string): string {
+    const val = parseFloat(raw);
+    if (!raw || isNaN(val)) return 'Enter a valid amount';
+    if (val <= 0) return 'Amount must be greater than $0';
+    if (val > outstanding) return `Amount exceeds balance of $${outstanding.toFixed(2)}`;
+    return '';
+  }
+
+  function handleSubmit() {
+    const err = validateAmount(paymentAmount);
+    setAmountError(err);
+    if (err || !selectedCustomerIdForPayment) return;
+
+    const resolvedAmount = parseFloat(paymentAmount);
+    handleRecordPayment(selectedCustomerIdForPayment, resolvedAmount, paymentMethod, paymentNotes);
+    setPaymentSuccess(`Logged payment of $${resolvedAmount.toFixed(2)} successfully!`);
+    setPaymentAmount('');
+    setSelectedCustomerIdForPayment('');
+    setPaymentNotes('');
+    setAmountError('');
+    setTimeout(() => {
+      setPaymentSuccess(null);
+      setActiveModal('none');
+    }, 2000);
+  }
 
   return (
     <div className="absolute inset-0 bg-[#000000]/60 backdrop-blur-xs z-50 flex flex-col justify-end animate-[fadeIn_0.2s_ease-out]">
@@ -46,10 +77,9 @@ export default function LogPaymentModal() {
               value={selectedCustomerIdForPayment}
               onChange={(e) => {
                 setSelectedCustomerIdForPayment(e.target.value);
-                const targetCust = customers.find(c => c.id === e.target.value);
-                if (targetCust) {
-                  setPaymentAmount(targetCust.outstandingBalance.toString());
-                }
+                const target = customers.find(c => c.id === e.target.value);
+                if (target) setPaymentAmount(target.outstandingBalance.toString());
+                setAmountError('');
               }}
             >
               <option value="">Choose debt holder profile...</option>
@@ -63,78 +93,65 @@ export default function LogPaymentModal() {
             </select>
           </div>
 
-          {/* Amount input */}
           {selectedCustomerIdForPayment && (
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-black uppercase text-black pl-1">Payment Amount ($)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-black font-black text-xs">$</span>
-                <input
-                  type="number"
-                  id="add-payment-amount-input"
-                  step="0.01"
-                  className="w-full bg-white border-2 border-black rounded-lg pl-7 pr-3 py-3 text-xs focus:ring-1 focus:ring-black font-black shadow-[2.5px_2.5px_0px_#000000]"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
+            <>
+              {/* Amount */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-black uppercase text-black pl-1">Payment Amount ($)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-black font-black text-xs">$</span>
+                  <input
+                    type="number"
+                    id="add-payment-amount-input"
+                    step="0.01"
+                    className={`w-full bg-white border-2 rounded-lg pl-7 pr-3 py-3 text-xs focus:ring-1 focus:ring-black font-black shadow-[2.5px_2.5px_0px_#000000] ${amountError ? 'border-rose-500' : 'border-black'}`}
+                    value={paymentAmount}
+                    onChange={(e) => {
+                      setPaymentAmount(e.target.value);
+                      setAmountError(validateAmount(e.target.value));
+                    }}
+                  />
+                </div>
+                {amountError && <p className="text-[10px] text-rose-600 font-black pl-1">{amountError}</p>}
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button type="button" onClick={() => { setPaymentAmount('5.00'); setAmountError(validateAmount('5.00')); }} className="bg-white border-2 border-black hover:bg-[#FFD8E8] px-3.5 py-1.5 rounded-full text-[10px] font-black text-black shadow-[1.5px_1.5px_0px_#000000] active:scale-[0.98] transition-all cursor-pointer">$5.00</button>
+                  <button type="button" onClick={() => { setPaymentAmount('10.00'); setAmountError(validateAmount('10.00')); }} className="bg-white border-2 border-black hover:bg-[#FFD8E8] px-3.5 py-1.5 rounded-full text-[10px] font-black text-black shadow-[1.5px_1.5px_0px_#000000] active:scale-[0.98] transition-all cursor-pointer">$10.00</button>
+                  <button type="button" onClick={() => { const v = outstanding.toString(); setPaymentAmount(v); setAmountError(validateAmount(v)); }} className="bg-white border-2 border-black hover:bg-[#9BE9FB] px-3.5 py-1.5 rounded-full text-[10px] font-black text-black shadow-[1.5px_1.5px_0px_#000000] active:scale-[0.98] transition-all cursor-pointer">Clear Full Debt</button>
+                </div>
+              </div>
+
+              {/* Payment Method */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase text-black pl-1">Payment Method</label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button type="button" onClick={() => setPaymentMethod('Cash')} className={`py-3 rounded-lg border-2 text-center font-black text-xs flex items-center justify-center gap-1 cursor-pointer transition-all shadow-[2.5px_2.5px_0px_#000000] ${paymentMethod === 'Cash' ? 'bg-[#9BE9FB] text-black border-black' : 'bg-white border-black hover:bg-[#9BE9FB]/20'}`}>Cash Collected</button>
+                  <button type="button" onClick={() => setPaymentMethod('E-transfer')} className={`py-3 rounded-lg border-2 text-center font-black text-xs flex items-center justify-center gap-1 cursor-pointer transition-all shadow-[2.5px_2.5px_0px_#000000] ${paymentMethod === 'E-transfer' ? 'bg-[#FFD8E8] text-black border-black' : 'bg-white border-black hover:bg-[#FFD8E8]/20'}`}>E-transfer</button>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase text-black pl-1">Payment memo notes</label>
+                <textarea
+                  placeholder="e.g. Paid via digital cash transfer during checkout"
+                  className="w-full bg-white border-2 border-black rounded-lg px-2.5 py-3 text-xs focus:ring-1 focus:ring-black font-semibold shadow-[2.5px_2.5px_0px_#000000]"
+                  rows={2}
+                  value={paymentNotes}
+                  onChange={(e) => setPaymentNotes(e.target.value)}
                 />
               </div>
-
-              <div className="flex flex-wrap gap-2 pt-1">
-                <button type="button" onClick={() => setPaymentAmount('5.00')} className="bg-white border-2 border-black hover:bg-[#FFD8E8] px-3.5 py-1.5 rounded-full text-[10px] font-black text-black shadow-[1.5px_1.5px_0px_#000000] active:scale-[0.98] transition-all cursor-pointer">$5.00</button>
-                <button type="button" onClick={() => setPaymentAmount('10.00')} className="bg-white border-2 border-black hover:bg-[#FFD8E8] px-3.5 py-1.5 rounded-full text-[10px] font-black text-black shadow-[1.5px_1.5px_0px_#000000] active:scale-[0.98] transition-all cursor-pointer">$10.00</button>
-                <button type="button" onClick={() => {
-                  const limit = customers.find(c => c.id === selectedCustomerIdForPayment)?.outstandingBalance || 0;
-                  setPaymentAmount(limit.toString());
-                }} className="bg-white border-2 border-black hover:bg-[#9BE9FB] px-3.5 py-1.5 rounded-full text-[10px] font-black text-black shadow-[1.5px_1.5px_0px_#000000] active:scale-[0.98] transition-all cursor-pointer">Clear Full Debt</button>
-              </div>
-            </div>
-          )}
-
-          {/* Payment Method */}
-          {selectedCustomerIdForPayment && (
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-black uppercase text-black pl-1">Payment Method</label>
-              <div className="grid grid-cols-2 gap-2.5">
-                <button type="button" onClick={() => setPaymentMethod('Cash')} className={`py-3 rounded-lg border-2 text-center font-black text-xs flex items-center justify-center gap-1 cursor-pointer transition-all shadow-[2.5px_2.5px_0px_#000000] ${paymentMethod === 'Cash' ? 'bg-[#9BE9FB] text-black border-black' : 'bg-white border-black hover:bg-[#9BE9FB]/20'}`}>Cash Collected</button>
-                <button type="button" onClick={() => setPaymentMethod('E-transfer')} className={`py-3 rounded-lg border-2 text-center font-black text-xs flex items-center justify-center gap-1 cursor-pointer transition-all shadow-[2.5px_2.5px_0px_#000000] ${paymentMethod === 'E-transfer' ? 'bg-[#FFD8E8] text-black border-black' : 'bg-white border-black hover:bg-[#FFD8E8]/20'}`}>E-transfer</button>
-              </div>
-            </div>
-          )}
-
-          {/* Notes */}
-          {selectedCustomerIdForPayment && (
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-black uppercase text-black pl-1">Payment memo notes</label>
-              <textarea
-                placeholder="e.g. Paid via digital cash transfer during checkout"
-                className="w-full bg-white border-2 border-black rounded-lg px-2.5 py-3 text-xs focus:ring-1 focus:ring-black font-semibold shadow-[2.5px_2.5px_0px_#000000]"
-                rows={2}
-                value={paymentNotes}
-                onChange={(e) => setPaymentNotes(e.target.value)}
-              />
-            </div>
+            </>
           )}
         </div>
 
-        {/* Submit footer */}
-        {selectedCustomerIdForPayment && parseFloat(paymentAmount) > 0 && (
+        {selectedCustomerIdForPayment && (
           <footer className="p-4 bg-white border-t-2 border-black shrink-0">
             <button
-              onClick={() => {
-                const resolvedAmount = parseFloat(paymentAmount);
-                handleRecordPayment(selectedCustomerIdForPayment, resolvedAmount, paymentMethod, paymentNotes);
-                setPaymentSuccess(`Logged payment of $${resolvedAmount.toFixed(2)} successfully!`);
-                setPaymentAmount('');
-                setSelectedCustomerIdForPayment('');
-                setPaymentNotes('');
-                setTimeout(() => {
-                  setPaymentSuccess(null);
-                  setActiveModal('none');
-                }, 2000);
-              }}
+              onClick={handleSubmit}
               className="w-full bg-black text-white hover:bg-[#FFD8E8] hover:text-black py-4 rounded-xl font-black text-sm border-2 border-black shadow-[4px_4px_0px_#000000] hover:shadow-[1.5px_1.5px_0px_#000000] duration-150 transition-all cursor-pointer"
             >
-              Confirm Log payment
+              Confirm Log Payment
             </button>
           </footer>
         )}
