@@ -121,18 +121,21 @@ export default function SalesTab() {
     return result;
   }, [computedChartData, sales, products]);
 
-  let periodPaidSalesTotal = 0;
-  let periodTabSalesTotal = 0;
-  computedChartData.forEach(day => {
-    const salesOnDay = sales.filter(s => {
-      try { return new Date(s.date).toISOString().split('T')[0] === day.dateStr; }
-      catch { return false; }
+  const { periodPaidSalesTotal, periodTabSalesTotal } = useMemo(() => {
+    let paid = 0;
+    let tab = 0;
+    computedChartData.forEach(day => {
+      const salesOnDay = sales.filter(s => {
+        try { return new Date(s.date).toISOString().split('T')[0] === day.dateStr; }
+        catch { return false; }
+      });
+      salesOnDay.forEach(s => {
+        if (s.status === 'Paid') { paid += s.totalAmount; }
+        else { tab += s.totalAmount; }
+      });
     });
-    salesOnDay.forEach(s => {
-      if (s.status === 'Paid') { periodPaidSalesTotal += s.totalAmount; }
-      else { periodTabSalesTotal += s.totalAmount; }
-    });
-  });
+    return { periodPaidSalesTotal: paid, periodTabSalesTotal: tab };
+  }, [computedChartData, sales]);
 
   // Profit estimator computations
   const estTotalItemsNum = Math.max(0, parseInt(estTotalItems) || 0);
