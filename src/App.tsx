@@ -697,9 +697,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFD8E8] flex items-center justify-center font-sans antialiased p-0 md:py-8 md:px-4">
+    <div className="h-dvh bg-[#FFD8E8] flex items-center justify-center font-sans antialiased p-0 md:py-8 md:px-4">
       {/* Immersive Mobile Device Shell Frame - Neo-Brutalist Black Border Frame */}
-      <div className="w-full max-w-md bg-white h-screen max-h-screen md:h-[850px] md:max-h-[850px] md:min-h-[850px] md:rounded-3xl border-4 border-[#000000] shadow-[8px_8px_0px_#000000] overflow-hidden flex flex-col relative">
+      <div className="w-full max-w-md bg-white h-full max-h-full md:h-[850px] md:max-h-[850px] md:min-h-[850px] md:rounded-3xl border-4 border-[#000000] shadow-[8px_8px_0px_#000000] overflow-hidden flex flex-col relative">
         
         {/* Compact Mobile Top Header Status Bar - Solid Black with White Font */}
         <header className="px-6 py-4.5 bg-[#000000] text-[#FFFFFF] flex justify-between items-center shrink-0 border-b-2 border-[#000000]">
