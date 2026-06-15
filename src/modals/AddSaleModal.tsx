@@ -44,13 +44,23 @@ export default function AddSaleModal() {
     });
   };
 
-  const handleCartDelta = (productId: string, delta: number) => {
+  const handleCartDelta = (productId: string, direction: number) => {
     const prod = products.find(p => p.id === productId);
     if (!prod) return;
     setSaleCart(prev =>
       prev.map(item => {
         if (item.productId === productId) {
-          const nextQty = item.quantity + delta;
+          // Base unit is 1. Stepping down from 1 lands on a half (0.5);
+          // stepping down from 0.5 removes the item. Stepping up from a
+          // half returns to 1, otherwise moves by whole units.
+          let nextQty: number;
+          if (direction > 0) {
+            nextQty = item.quantity < 1 ? 1 : item.quantity + 1;
+          } else {
+            if (item.quantity > 1) nextQty = item.quantity - 1;
+            else if (item.quantity === 1) nextQty = 0.5;
+            else nextQty = 0;
+          }
           if (nextQty <= 0) return null;
           if (nextQty > prod.stock) return item;
           return { ...item, quantity: nextQty };
@@ -140,7 +150,7 @@ export default function AddSaleModal() {
                       <span className="font-extrabold text-black line-clamp-1 flex-1 pr-2">{prod.name}</span>
                       <div className="flex items-center gap-2.5 mr-3 shrink-0">
                         <button type="button" onClick={() => handleCartDelta(item.productId, -1)} className="bg-white border border-black w-5.5 h-5.5 rounded-full flex items-center justify-center text-rose-600 font-extrabold hover:bg-[#FFD8E8] transition-all cursor-pointer shadow-[1px_1px_0px_#000000]">-</button>
-                        <span className="font-black text-black min-w-[14px] text-center">{item.quantity}</span>
+                        <span className="font-black text-black min-w-[26px] text-center">{item.quantity === 0.5 ? '½' : item.quantity}</span>
                         <button type="button" onClick={() => handleCartDelta(item.productId, 1)} className="bg-white border border-black w-5.5 h-5.5 rounded-full flex items-center justify-center text-emerald-600 font-extrabold hover:bg-[#9BE9FB] transition-all cursor-pointer shadow-[1px_1px_0px_#000000]">+</button>
                       </div>
                       <span className="font-black text-black min-w-[50px] text-right">${(prod.price * item.quantity).toFixed(2)}</span>
