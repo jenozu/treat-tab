@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, ShoppingBag, Search, Sparkles } from 'lucide-react';
+import { X, ShoppingBag, Search, Sparkles, CalendarDays } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function AddSaleModal() {
@@ -13,6 +13,14 @@ export default function AddSaleModal() {
   const [applyDiscount, setApplyDiscount] = useState(true);
   const [customTotalEnabled, setCustomTotalEnabled] = useState(false);
   const [customTotalValue, setCustomTotalValue] = useState('');
+  // Local YYYY-MM-DD for the date picker, defaulting to today.
+  const todayStr = (() => {
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off * 60000).toISOString().split('T')[0];
+  })();
+  const [saleDate, setSaleDate] = useState(todayStr);
+  const isBackdated = saleDate !== todayStr;
 
   const selectedCustomer = customers.find(c => c.id === saleCustomerId);
   const customerDiscount = selectedCustomer ? selectedCustomer.discount : 0;
@@ -44,13 +52,23 @@ export default function AddSaleModal() {
     });
   };
 
-  const handleCartDelta = (productId: string, delta: number) => {
+  const handleCartDelta = (productId: string, direction: number) => {
     const prod = products.find(p => p.id === productId);
     if (!prod) return;
     setSaleCart(prev =>
       prev.map(item => {
         if (item.productId === productId) {
-          const nextQty = item.quantity + delta;
+          // Base unit is 1. Stepping down from 1 lands on a half (0.5);
+          // stepping down from 0.5 removes the item. Stepping up from a
+          // half returns to 1, otherwise moves by whole units.
+          let nextQty: number;
+          if (direction > 0) {
+            nextQty = item.quantity < 1 ? 1 : item.quantity + 1;
+          } else {
+            if (item.quantity > 1) nextQty = item.quantity - 1;
+            else if (item.quantity === 1) nextQty = 0.5;
+            else nextQty = 0;
+          }
           if (nextQty <= 0) return null;
           if (nextQty > prod.stock) return item;
           return { ...item, quantity: nextQty };
@@ -140,7 +158,7 @@ export default function AddSaleModal() {
                       <span className="font-extrabold text-black line-clamp-1 flex-1 pr-2">{prod.name}</span>
                       <div className="flex items-center gap-2.5 mr-3 shrink-0">
                         <button type="button" onClick={() => handleCartDelta(item.productId, -1)} className="bg-white border border-black w-5.5 h-5.5 rounded-full flex items-center justify-center text-rose-600 font-extrabold hover:bg-[#FFD8E8] transition-all cursor-pointer shadow-[1px_1px_0px_#000000]">-</button>
-                        <span className="font-black text-black min-w-[14px] text-center">{item.quantity}</span>
+                        <span className="font-black text-black min-w-[26px] text-center">{item.quantity === 0.5 ? '½' : item.quantity}</span>
                         <button type="button" onClick={() => handleCartDelta(item.productId, 1)} className="bg-white border border-black w-5.5 h-5.5 rounded-full flex items-center justify-center text-emerald-600 font-extrabold hover:bg-[#9BE9FB] transition-all cursor-pointer shadow-[1px_1px_0px_#000000]">+</button>
                       </div>
                       <span className="font-black text-black min-w-[50px] text-right">${(prod.price * item.quantity).toFixed(2)}</span>
@@ -193,6 +211,26 @@ export default function AddSaleModal() {
                   Record as pending tab
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Sale date — allows back-dating sales made before using the app */}
+          {saleCustomerId && (
+            <div className="space-y-2 select-none">
+              <label className="text-[11px] font-black uppercase text-black pl-1 flex items-center gap-1.5">
+                <CalendarDays className="w-3.5 h-3.5" />
+                Date of sale
+              </label>
+              <input
+                type="date"
+                max={todayStr}
+                value={saleDate}
+                onChange={(e) => setSaleDate(e.target.value || todayStr)}
+                className={`w-full bg-white border-2 border-black rounded-lg px-3 py-3 text-xs font-black text-black focus:ring-1 focus:ring-black shadow-[2.5px_2.5px_0px_#000000] ${isBackdated ? 'bg-[#FFD8E8]' : ''}`}
+              />
+              {isBackdated && (
+                <p className="text-[10px] font-bold text-black/55 pl-1">Recording this as a past sale.</p>
+              )}
             </div>
           )}
 
@@ -299,7 +337,10 @@ export default function AddSaleModal() {
               disabled={!saleCustomerId}
               onClick={() => {
                 if (!saleCustomerId) return;
-                handleRecordSale(saleCustomerId, saleCart, saleSubtotal, saleIsTab);
+                // Back-dated sales get a noon-local timestamp to avoid timezone
+                // day rollover; today's sales keep the live timestamp.
+                const saleDateIso = isBackdated ? new Date(`${saleDate}T12:00:00`).toISOString() : undefined;
+                handleRecordSale(saleCustomerId, saleCart, saleSubtotal, saleIsTab, saleDateIso);
                 setSaleSuccess(`Purchase registered!`);
                 setSaleCart([]);
                 setSaleCustomerId('');
@@ -307,6 +348,7 @@ export default function AddSaleModal() {
                 setApplyDiscount(true);
                 setCustomTotalEnabled(false);
                 setCustomTotalValue('');
+                setSaleDate(todayStr);
                 setTimeout(() => {
                   setSaleSuccess(null);
                   setActiveModal('none');
