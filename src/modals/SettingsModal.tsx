@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { X, Settings } from 'lucide-react';
+import { X, Settings, LogOut } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { isSupabaseConfigured } from '../supabase';
 
 export default function SettingsModal() {
   const { weeklyGoal, setWeeklyGoal, setActiveModal } = useApp();
+  const { user, signOut } = useAuth();
 
   const [goalInput, setGoalInput] = useState(weeklyGoal.toString());
   const [goalError, setGoalError] = useState('');
@@ -87,6 +90,21 @@ export default function SettingsModal() {
               Save Settings
             </button>
           </div>
+
+          {isSupabaseConfigured && user && (
+            <div className="border-t-2 border-black/10 pt-4 space-y-2">
+              <p className="text-[10px] text-black/50 font-semibold pl-1">
+                Signed in as <span className="font-black text-black">{user.email}</span>
+              </p>
+              <button
+                onClick={async () => { setActiveModal('none'); await signOut(); }}
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-50 text-rose-700 hover:bg-rose-100 border-2 border-rose-200 rounded-xl font-black text-xs duration-150 transition-all cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
