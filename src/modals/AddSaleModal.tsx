@@ -10,15 +10,26 @@ export default function AddSaleModal() {
   const [saleIsTab, setSaleIsTab] = useState(false);
   const [saleSuccess, setSaleSuccess] = useState<string | null>(null);
   const [productSearch, setProductSearch] = useState('');
+  const [applyDiscount, setApplyDiscount] = useState(true);
+  const [customTotalEnabled, setCustomTotalEnabled] = useState(false);
+  const [customTotalValue, setCustomTotalValue] = useState('');
 
   const selectedCustomer = customers.find(c => c.id === saleCustomerId);
-  const saleCustomerDiscount = selectedCustomer ? selectedCustomer.discount : 0;
+  const customerDiscount = selectedCustomer ? selectedCustomer.discount : 0;
+  const hasDiscount = customerDiscount > 0;
+  // Only apply the discount when the customer has one AND the toggle is on.
+  const saleCustomerDiscount = hasDiscount && applyDiscount ? customerDiscount : 0;
   const originalSubtotal = saleCart.reduce((sum, item) => {
     const prod = products.find(p => p.id === item.productId);
     return sum + (prod ? prod.price * item.quantity : 0);
   }, 0);
   const saleDiscountAmount = originalSubtotal * (saleCustomerDiscount / 100);
-  const saleSubtotal = Math.max(0, originalSubtotal - saleDiscountAmount);
+  const computedSubtotal = Math.max(0, originalSubtotal - saleDiscountAmount);
+
+  // Custom override: when enabled and valid, the user types the exact charge.
+  const parsedCustomTotal = parseFloat(customTotalValue);
+  const customTotalValid = customTotalEnabled && !isNaN(parsedCustomTotal) && parsedCustomTotal >= 0;
+  const saleSubtotal = customTotalValid ? parsedCustomTotal : computedSubtotal;
 
   const handleCartAdd = (productId: string) => {
     const prod = products.find(p => p.id === productId);
@@ -150,6 +161,7 @@ export default function AddSaleModal() {
               onChange={(e) => {
                 setSaleCustomerId(e.target.value);
                 if (!e.target.value) setSaleIsTab(false);
+                setApplyDiscount(true);
               }}
             >
               <option value="" disabled>-- Choose Customer (Required) --</option>
@@ -184,10 +196,77 @@ export default function AddSaleModal() {
             </div>
           )}
 
+          {/* Pricing controls */}
+          {saleCart.length > 0 && saleCustomerId && (
+            <div className="space-y-3 select-none">
+              {/* Discount toggle — only when this customer has a fixed discount */}
+              {hasDiscount && (
+                <button
+                  type="button"
+                  onClick={() => setApplyDiscount(prev => !prev)}
+                  disabled={customTotalEnabled}
+                  className={`w-full flex items-center justify-between gap-2 p-3 rounded-xl border-2 border-black text-left transition-all shadow-[2.5px_2.5px_0px_#000000] ${
+                    customTotalEnabled
+                      ? 'bg-[#f1f1f1] opacity-55 cursor-not-allowed shadow-none'
+                      : applyDiscount
+                        ? 'bg-[#9BE9FB] cursor-pointer'
+                        : 'bg-white cursor-pointer'
+                  }`}
+                >
+                  <span className="flex flex-col">
+                    <span className="text-[11px] font-black uppercase text-black">Apply {customerDiscount}% discount</span>
+                    <span className="text-[10px] font-bold text-black/55">{applyDiscount ? `${selectedCustomer?.name}'s usual rate is on` : 'Charging full price this time'}</span>
+                  </span>
+                  <span className={`shrink-0 w-11 h-6 rounded-full border-2 border-black flex items-center px-0.5 transition-all ${applyDiscount && !customTotalEnabled ? 'bg-black justify-end' : 'bg-white justify-start'}`}>
+                    <span className="w-4 h-4 rounded-full bg-white border border-black" />
+                  </span>
+                </button>
+              )}
+
+              {/* Custom total override */}
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomTotalEnabled(prev => {
+                    const next = !prev;
+                    if (next && !customTotalValue) setCustomTotalValue(computedSubtotal.toFixed(2));
+                    return next;
+                  });
+                }}
+                className={`w-full flex items-center justify-between gap-2 p-3 rounded-xl border-2 border-black text-left transition-all shadow-[2.5px_2.5px_0px_#000000] cursor-pointer ${customTotalEnabled ? 'bg-[#FFD8E8]' : 'bg-white'}`}
+              >
+                <span className="flex flex-col">
+                  <span className="text-[11px] font-black uppercase text-black">Set custom price</span>
+                  <span className="text-[10px] font-bold text-black/55">{customTotalEnabled ? 'Override — type the exact charge' : 'e.g. 3 units for a flat $250'}</span>
+                </span>
+                <span className={`shrink-0 w-11 h-6 rounded-full border-2 border-black flex items-center px-0.5 transition-all ${customTotalEnabled ? 'bg-black justify-end' : 'bg-white justify-start'}`}>
+                  <span className="w-4 h-4 rounded-full bg-white border border-black" />
+                </span>
+              </button>
+
+              {customTotalEnabled && (
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-black font-black text-sm">$</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    autoFocus
+                    placeholder="0.00"
+                    className="w-full bg-white border-2 border-black rounded-lg pl-7 pr-3 py-3 text-sm font-black text-black focus:ring-1 focus:ring-black shadow-[2.5px_2.5px_0px_#000000] placeholder-black/40"
+                    value={customTotalValue}
+                    onChange={(e) => setCustomTotalValue(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Subtotal preview card */}
           {saleCart.length > 0 && (
             <div className="space-y-2 select-none">
-              {saleCustomerDiscount > 0 ? (
+              {!customTotalValid && saleCustomerDiscount > 0 ? (
                 <div className="p-3 bg-white rounded-xl border-2 border-black border-dashed flex flex-col gap-1 text-[11px] font-black text-black">
                   <div className="flex justify-between text-black/60">
                     <span>Basket Sum:</span>
@@ -199,8 +278,14 @@ export default function AddSaleModal() {
                   </div>
                 </div>
               ) : null}
+              {customTotalValid && originalSubtotal > 0 ? (
+                <div className="p-3 bg-white rounded-xl border-2 border-black border-dashed flex justify-between text-[11px] font-black text-black/60">
+                  <span>Catalog price was:</span>
+                  <span className="font-numeral-sm line-through">${originalSubtotal.toFixed(2)}</span>
+                </div>
+              ) : null}
               <div className="p-3.5 bg-white rounded-xl border-2 border-black flex justify-between items-center shadow-[3.5px_3.5px_0px_#000000]">
-                <span className="font-extrabold text-xs text-black/60 uppercase">Checkout total amount</span>
+                <span className="font-extrabold text-xs text-black/60 uppercase">{customTotalValid ? 'Custom charge' : 'Checkout total amount'}</span>
                 <span id="add-sale-total-preview" className="font-black text-lg text-black font-numeral-lg">${saleSubtotal.toFixed(2)}</span>
               </div>
             </div>
@@ -219,6 +304,9 @@ export default function AddSaleModal() {
                 setSaleCart([]);
                 setSaleCustomerId('');
                 setSaleIsTab(false);
+                setApplyDiscount(true);
+                setCustomTotalEnabled(false);
+                setCustomTotalValue('');
                 setTimeout(() => {
                   setSaleSuccess(null);
                   setActiveModal('none');
