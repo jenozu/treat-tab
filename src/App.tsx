@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { isSupabaseConfigured } from './supabase';
@@ -21,16 +22,31 @@ import SettingsModal from './modals/SettingsModal';
 import { Sparkles, X, Store } from 'lucide-react';
 
 function AppContent() {
-  const { activeTab, activeModal, editingCustomerId, editingProductId, buzzStatus, globalError, clearGlobalError } = useApp();
+  const {
+    activeTab, activeModal, editingCustomerId, editingProductId,
+    buzzStatus, globalError, clearGlobalError,
+    setActiveModal, setEditingCustomerId, setEditingProductId,
+  } = useApp();
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return;
+      if (activeModal !== 'none') { setActiveModal('none'); return; }
+      if (editingCustomerId !== null) { setEditingCustomerId(null); return; }
+      if (editingProductId !== null) { setEditingProductId(null); }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [activeModal, editingCustomerId, editingProductId, setActiveModal, setEditingCustomerId, setEditingProductId]);
 
   return (
     <div className="w-full max-w-md bg-white h-full max-h-full md:h-[850px] md:max-h-[850px] md:min-h-[850px] md:rounded-3xl border-4 border-[#000000] shadow-[8px_8px_0px_#000000] overflow-hidden flex flex-col relative">
       <Header />
 
       {globalError && (
-        <div className="shrink-0 bg-rose-600 text-white text-[10px] font-black flex items-center justify-between gap-2 px-4 py-2 border-b-2 border-black z-30">
+        <div role="alert" aria-live="assertive" className="shrink-0 bg-rose-600 text-white text-[10px] font-black flex items-center justify-between gap-2 px-4 py-2 border-b-2 border-black z-30">
           <span>{globalError}</span>
-          <button onClick={clearGlobalError} className="p-0.5 hover:bg-rose-700 rounded shrink-0 cursor-pointer">
+          <button onClick={clearGlobalError} aria-label="Dismiss error" className="p-0.5 hover:bg-rose-700 rounded shrink-0 cursor-pointer">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>

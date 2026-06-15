@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { X, Cookie } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useEscapeKey } from '../hooks/useEscapeKey';
+import { validateProductName, validateCost, validatePrice, validateStock } from '../utils/validation';
 import { Product } from '../types';
 
 export default function EditProductModal() {
   const { products, editingProductId, setEditingProductId, handleSaveProductEdit, handleDeleteProduct } = useApp();
+  useEscapeKey(() => setEditingProductId(null));
 
   const product = products.find(p => p.id === editingProductId);
 
@@ -32,20 +35,14 @@ export default function EditProductModal() {
 
   function validate() {
     const errs: Record<string, string> = {};
-    const name = editProdName.trim();
-    if (!name) {
-      errs.name = 'Product name is required';
-    } else if (name.length > 100) {
-      errs.name = 'Name must be under 100 characters';
-    } else if (products.some(p => p.id !== editingProductId && p.name.trim().toLowerCase() === name.toLowerCase())) {
-      errs.name = 'Another product already has this name';
-    }
-    const cost = parseFloat(editProdCost);
-    if (isNaN(cost) || cost < 0) errs.cost = 'Must be 0 or more';
-    const price = parseFloat(editProdPrice);
-    if (isNaN(price) || price <= 0) errs.price = 'Must be greater than 0';
-    const stock = parseInt(editProdStock);
-    if (isNaN(stock) || stock < 0) errs.stock = 'Must be 0 or more';
+    const nameErr = validateProductName(editProdName, products, editingProductId ?? undefined);
+    if (nameErr) errs.name = nameErr;
+    const costErr = validateCost(editProdCost);
+    if (costErr) errs.cost = costErr;
+    const priceErr = validatePrice(editProdPrice);
+    if (priceErr) errs.price = priceErr;
+    const stockErr = validateStock(editProdStock);
+    if (stockErr) errs.stock = stockErr;
     return errs;
   }
 
@@ -66,21 +63,26 @@ export default function EditProductModal() {
     }`;
 
   return (
-    <div className="absolute inset-0 bg-[#000000]/60 backdrop-blur-xs z-50 flex flex-col justify-end animate-[fadeIn_0.2s_ease-out]">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-prod-title"
+      className="absolute inset-0 bg-[#000000]/60 backdrop-blur-xs z-50 flex flex-col justify-end animate-[fadeIn_0.2s_ease-out]"
+    >
       <div className="bg-white rounded-t-[2rem] border-t-4 border-x-4 border-black max-h-[92%] flex flex-col overflow-hidden animate-[slideUp_0.25s_ease-out]">
         <header className="p-4 bg-black text-white border-b-2 border-black flex justify-between items-center shrink-0">
           <div className="flex items-center gap-2">
             <Cookie className="w-5 h-5 text-[#9BE9FB]" />
-            <h3 className="font-extrabold text-md text-white">Edit Sweet Product</h3>
+            <h3 id="edit-prod-title" className="font-extrabold text-md text-white">Edit Sweet Product</h3>
           </div>
-          <button onClick={() => setEditingProductId(null)} className="p-1.5 text-white hover:bg-white/10 rounded-full cursor-pointer">
+          <button onClick={() => setEditingProductId(null)} aria-label="Close" className="p-1.5 text-white hover:bg-white/10 rounded-full cursor-pointer">
             <X className="w-6 h-6" />
           </button>
         </header>
 
         <div className="p-4 space-y-4 select-none bg-[#9BE9FB]/5 pb-6 overflow-y-auto">
           <div className="space-y-1">
-            <label className="text-[11px] font-black uppercase text-black pl-1">Sweet Name</label>
+            <label htmlFor="edit-prod-name-val" className="text-[11px] font-black uppercase text-black pl-1">Sweet Name</label>
             <input
               type="text"
               id="edit-prod-name-val"
@@ -88,13 +90,14 @@ export default function EditProductModal() {
               className={fieldClass('name')}
               value={editProdName}
               onChange={(e) => { setEditProdName(e.target.value); if (touched) setErrors(validate()); }}
+              aria-invalid={touched && !!errors.name}
             />
-            {touched && errors.name && <p className="text-[10px] text-rose-600 font-black pl-1">{errors.name}</p>}
+            {touched && errors.name && <p role="alert" className="text-[10px] text-rose-600 font-black pl-1">{errors.name}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[11px] font-black uppercase text-black pl-1">Cost Price ($)</label>
+              <label htmlFor="edit-prod-cost-val" className="text-[11px] font-black uppercase text-black pl-1">Cost Price ($)</label>
               <input
                 type="number"
                 id="edit-prod-cost-val"
@@ -103,11 +106,12 @@ export default function EditProductModal() {
                 className={fieldClass('cost')}
                 value={editProdCost}
                 onChange={(e) => { setEditProdCost(e.target.value); if (touched) setErrors(validate()); }}
+                aria-invalid={touched && !!errors.cost}
               />
-              {touched && errors.cost && <p className="text-[10px] text-rose-600 font-black pl-1">{errors.cost}</p>}
+              {touched && errors.cost && <p role="alert" className="text-[10px] text-rose-600 font-black pl-1">{errors.cost}</p>}
             </div>
             <div className="space-y-1">
-              <label className="text-[11px] font-black uppercase text-black pl-1">Selling Price ($)</label>
+              <label htmlFor="edit-prod-price-val" className="text-[11px] font-black uppercase text-black pl-1">Selling Price ($)</label>
               <input
                 type="number"
                 id="edit-prod-price-val"
@@ -116,22 +120,22 @@ export default function EditProductModal() {
                 className={fieldClass('price')}
                 value={editProdPrice}
                 onChange={(e) => { setEditProdPrice(e.target.value); if (touched) setErrors(validate()); }}
+                aria-invalid={touched && !!errors.price}
               />
-              {touched && errors.price && <p className="text-[10px] text-rose-600 font-black pl-1">{errors.price}</p>}
+              {touched && errors.price && <p role="alert" className="text-[10px] text-rose-600 font-black pl-1">{errors.price}</p>}
             </div>
           </div>
 
-          {/* Warn when selling at a loss */}
           {!errors.cost && !errors.price && editProdCost && editProdPrice &&
             parseFloat(editProdPrice) > 0 && parseFloat(editProdCost) >= parseFloat(editProdPrice) && (
-            <p className="text-[10px] text-amber-700 font-black bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <p role="alert" className="text-[10px] text-amber-700 font-black bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
               Cost ≥ selling price — you would sell at a loss.
             </p>
           )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[11px] font-black uppercase text-black pl-1">Category</label>
+              <label htmlFor="edit-prod-category-val" className="text-[11px] font-black uppercase text-black pl-1">Category</label>
               <select
                 id="edit-prod-category-val"
                 className="w-full bg-white border-2 border-black rounded-lg px-2.5 py-3 text-xs focus:ring-1 focus:ring-black font-semibold shadow-[2.5px_2.5px_0px_#000000]"
@@ -146,7 +150,7 @@ export default function EditProductModal() {
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[11px] font-black uppercase text-black pl-1">Stock Count</label>
+              <label htmlFor="edit-prod-stock-val" className="text-[11px] font-black uppercase text-black pl-1">Stock Count</label>
               <input
                 type="number"
                 id="edit-prod-stock-val"
@@ -154,8 +158,9 @@ export default function EditProductModal() {
                 className={fieldClass('stock')}
                 value={editProdStock}
                 onChange={(e) => { setEditProdStock(e.target.value); if (touched) setErrors(validate()); }}
+                aria-invalid={touched && !!errors.stock}
               />
-              {touched && errors.stock && <p className="text-[10px] text-rose-600 font-black pl-1">{errors.stock}</p>}
+              {touched && errors.stock && <p role="alert" className="text-[10px] text-rose-600 font-black pl-1">{errors.stock}</p>}
             </div>
           </div>
 

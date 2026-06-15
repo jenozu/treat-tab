@@ -18,6 +18,8 @@ export default function BottomNav() {
           key={tab.id}
           id={`tab-${tab.id}`}
           onClick={() => { setActiveModal('none'); setActiveTab(tab.id); }}
+          aria-current={activeTab === tab.id ? 'page' : undefined}
+          aria-label={tab.label}
           className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
             activeTab === tab.id
               ? `${tab.activeColor} text-black border-2 border-black shadow-[2px_2px_0px_#000000] scale-105`

@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { X, User } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useEscapeKey } from '../hooks/useEscapeKey';
+import { validateCustomerName, validateDiscount } from '../utils/validation';
 
 export default function EditCustomerModal() {
   const { customers, editingCustomerId, setEditingCustomerId, handleSaveCustomerEdit, handleDeleteCustomer } = useApp();
+  useEscapeKey(() => setEditingCustomerId(null));
 
   const customer = customers.find(c => c.id === editingCustomerId);
 
@@ -25,18 +28,10 @@ export default function EditCustomerModal() {
 
   function validate() {
     const errs: Record<string, string> = {};
-    const name = editCustName.trim();
-    if (!name) {
-      errs.name = 'Name is required';
-    } else if (name.length > 100) {
-      errs.name = 'Name must be under 100 characters';
-    } else if (
-      customers.some(c => c.id !== editingCustomerId && c.name.trim().toLowerCase() === name.toLowerCase())
-    ) {
-      errs.name = 'Another customer already has this name';
-    }
-    const disc = parseFloat(editCustDiscount);
-    if (isNaN(disc) || disc < 0 || disc > 100) errs.discount = 'Must be between 0 and 100';
+    const nameErr = validateCustomerName(editCustName, customers, editingCustomerId ?? undefined);
+    if (nameErr) errs.name = nameErr;
+    const discErr = validateDiscount(editCustDiscount);
+    if (discErr) errs.discount = discErr;
     return errs;
   }
 
@@ -55,21 +50,26 @@ export default function EditCustomerModal() {
     }`;
 
   return (
-    <div className="absolute inset-0 bg-[#000000]/60 backdrop-blur-xs z-50 flex flex-col justify-end animate-[fadeIn_0.2s_ease-out]">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-cust-title"
+      className="absolute inset-0 bg-[#000000]/60 backdrop-blur-xs z-50 flex flex-col justify-end animate-[fadeIn_0.2s_ease-out]"
+    >
       <div className="bg-white rounded-t-[2rem] border-t-4 border-x-4 border-black max-h-[92%] flex flex-col overflow-hidden animate-[slideUp_0.25s_ease-out]">
         <header className="p-4 bg-black text-white border-b-2 border-black flex justify-between items-center shrink-0">
           <div className="flex items-center gap-2">
             <User className="w-5 h-5 text-[#9BE9FB]" />
-            <h3 className="font-extrabold text-md text-white">Edit Customer Profile</h3>
+            <h3 id="edit-cust-title" className="font-extrabold text-md text-white">Edit Customer Profile</h3>
           </div>
-          <button onClick={() => setEditingCustomerId(null)} className="p-1.5 text-white hover:bg-white/10 rounded-full cursor-pointer">
+          <button onClick={() => setEditingCustomerId(null)} aria-label="Close" className="p-1.5 text-white hover:bg-white/10 rounded-full cursor-pointer">
             <X className="w-6 h-6" />
           </button>
         </header>
 
         <div className="p-4 space-y-4 select-none bg-[#FFD8E8]/5 pb-6 overflow-y-auto">
           <div className="space-y-1">
-            <label className="text-[11px] font-black uppercase text-black pl-1">Client Full Name</label>
+            <label htmlFor="edit-cust-name-val" className="text-[11px] font-black uppercase text-black pl-1">Client Full Name</label>
             <input
               type="text"
               id="edit-cust-name-val"
@@ -77,12 +77,13 @@ export default function EditCustomerModal() {
               className={fieldClass('name')}
               value={editCustName}
               onChange={(e) => { setEditCustName(e.target.value); if (touched) setErrors(validate()); }}
+              aria-invalid={touched && !!errors.name}
             />
-            {touched && errors.name && <p className="text-[10px] text-rose-600 font-black pl-1">{errors.name}</p>}
+            {touched && errors.name && <p role="alert" className="text-[10px] text-rose-600 font-black pl-1">{errors.name}</p>}
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] font-black uppercase text-black pl-1">Savings Discount (%)</label>
+            <label htmlFor="edit-cust-discount-val" className="text-[11px] font-black uppercase text-black pl-1">Savings Discount (%)</label>
             <input
               type="number"
               id="edit-cust-discount-val"
@@ -92,8 +93,9 @@ export default function EditCustomerModal() {
               className={fieldClass('discount')}
               value={editCustDiscount}
               onChange={(e) => { setEditCustDiscount(e.target.value); if (touched) setErrors(validate()); }}
+              aria-invalid={touched && !!errors.discount}
             />
-            {touched && errors.discount && <p className="text-[10px] text-rose-600 font-black pl-1">{errors.discount}</p>}
+            {touched && errors.discount && <p role="alert" className="text-[10px] text-rose-600 font-black pl-1">{errors.discount}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-2.5 pt-2">
