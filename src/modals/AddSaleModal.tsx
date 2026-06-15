@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, ShoppingBag, Search, Sparkles } from 'lucide-react';
+import { X, ShoppingBag, Search, Sparkles, CalendarDays } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function AddSaleModal() {
@@ -13,6 +13,14 @@ export default function AddSaleModal() {
   const [applyDiscount, setApplyDiscount] = useState(true);
   const [customTotalEnabled, setCustomTotalEnabled] = useState(false);
   const [customTotalValue, setCustomTotalValue] = useState('');
+  // Local YYYY-MM-DD for the date picker, defaulting to today.
+  const todayStr = (() => {
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off * 60000).toISOString().split('T')[0];
+  })();
+  const [saleDate, setSaleDate] = useState(todayStr);
+  const isBackdated = saleDate !== todayStr;
 
   const selectedCustomer = customers.find(c => c.id === saleCustomerId);
   const customerDiscount = selectedCustomer ? selectedCustomer.discount : 0;
@@ -206,6 +214,26 @@ export default function AddSaleModal() {
             </div>
           )}
 
+          {/* Sale date — allows back-dating sales made before using the app */}
+          {saleCustomerId && (
+            <div className="space-y-2 select-none">
+              <label className="text-[11px] font-black uppercase text-black pl-1 flex items-center gap-1.5">
+                <CalendarDays className="w-3.5 h-3.5" />
+                Date of sale
+              </label>
+              <input
+                type="date"
+                max={todayStr}
+                value={saleDate}
+                onChange={(e) => setSaleDate(e.target.value || todayStr)}
+                className={`w-full bg-white border-2 border-black rounded-lg px-3 py-3 text-xs font-black text-black focus:ring-1 focus:ring-black shadow-[2.5px_2.5px_0px_#000000] ${isBackdated ? 'bg-[#FFD8E8]' : ''}`}
+              />
+              {isBackdated && (
+                <p className="text-[10px] font-bold text-black/55 pl-1">Recording this as a past sale.</p>
+              )}
+            </div>
+          )}
+
           {/* Pricing controls */}
           {saleCart.length > 0 && saleCustomerId && (
             <div className="space-y-3 select-none">
@@ -309,7 +337,10 @@ export default function AddSaleModal() {
               disabled={!saleCustomerId}
               onClick={() => {
                 if (!saleCustomerId) return;
-                handleRecordSale(saleCustomerId, saleCart, saleSubtotal, saleIsTab);
+                // Back-dated sales get a noon-local timestamp to avoid timezone
+                // day rollover; today's sales keep the live timestamp.
+                const saleDateIso = isBackdated ? new Date(`${saleDate}T12:00:00`).toISOString() : undefined;
+                handleRecordSale(saleCustomerId, saleCart, saleSubtotal, saleIsTab, saleDateIso);
                 setSaleSuccess(`Purchase registered!`);
                 setSaleCart([]);
                 setSaleCustomerId('');
@@ -317,6 +348,7 @@ export default function AddSaleModal() {
                 setApplyDiscount(true);
                 setCustomTotalEnabled(false);
                 setCustomTotalValue('');
+                setSaleDate(todayStr);
                 setTimeout(() => {
                   setSaleSuccess(null);
                   setActiveModal('none');

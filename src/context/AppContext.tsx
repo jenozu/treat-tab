@@ -30,7 +30,7 @@ interface AppContextValue {
   clearGlobalError: () => void;
   handleAddCustomer: (name: string, discount: number) => Promise<void>;
   handleAddProduct: (name: string, cost: number, price: number, category: Product['category'], stock: number) => Promise<void>;
-  handleRecordSale: (customerId: string, cartItems: { productId: string; quantity: number }[], totalAmount: number, payTypeTab: boolean) => void;
+  handleRecordSale: (customerId: string, cartItems: { productId: string; quantity: number }[], totalAmount: number, payTypeTab: boolean, saleDate?: string) => void;
   handleRecordPayment: (customerId: string, amount: number, method: 'Cash' | 'E-transfer', notes: string) => void;
   handleQuickAdjustStock: (productId: string, nextStock: number) => void;
   handleStartEditCustomer: (cust: Customer) => void;
@@ -156,6 +156,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     cartItems: { productId: string; quantity: number }[],
     totalAmount: number,
     payTypeTab: boolean,
+    saleDate?: string,
   ) => {
     const isTab = payTypeTab && customerId !== '';
 
@@ -188,7 +189,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }),
       totalAmount,
       status: isTab ? 'Pending' : 'Paid',
-      date: new Date().toISOString(),
+      // Use the chosen back-date when supplied, otherwise stamp the current time.
+      date: saleDate ? new Date(saleDate).toISOString() : new Date().toISOString(),
     };
     const updatedSales = [newSale, ...sales];
 
