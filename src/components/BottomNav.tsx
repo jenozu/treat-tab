@@ -3,16 +3,16 @@ import { useApp } from '../context/AppContext';
 import { TabType } from '../constants';
 
 const tabs: { id: TabType; label: string; icon: React.ReactNode; activeColor: string }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <Store className="w-5 h-5 shrink-0" />, activeColor: 'bg-[#9BE9FB]' },
-  { id: 'sales', label: 'Sales', icon: <History className="w-5 h-5 shrink-0" />, activeColor: 'bg-[#FFD8E8]' },
-  { id: 'customers', label: 'Customers', icon: <User className="w-5 h-5 shrink-0" />, activeColor: 'bg-[#9BE9FB]' },
-  { id: 'products', label: 'Products', icon: <Cookie className="w-5 h-5 shrink-0" />, activeColor: 'bg-[#FFD8E8]' },
+  { id: 'dashboard', label: 'Dashboard', icon: <Store className="w-5 h-5 shrink-0" />, activeColor: 'bg-brand-cyan' },
+  { id: 'sales', label: 'Sales', icon: <History className="w-5 h-5 shrink-0" />, activeColor: 'bg-brand-pink' },
+  { id: 'customers', label: 'Customers', icon: <User className="w-5 h-5 shrink-0" />, activeColor: 'bg-brand-cyan' },
+  { id: 'products', label: 'Products', icon: <Cookie className="w-5 h-5 shrink-0" />, activeColor: 'bg-brand-pink' },
 ];
 
 export default function BottomNav() {
   const { activeTab, setActiveTab, setActiveModal } = useApp();
   return (
-    <nav className="bg-black border-t-4 border-black px-2 py-2.5 flex justify-around items-center shrink-0 z-20 select-none text-white shadow-[0_-4px_16px_rgba(0,0,0,0.15)]">
+    <nav className="bg-brand-black border-t-4 border-brand-black px-2 py-2.5 flex justify-around items-center shrink-0 z-20 select-none text-brand-white shadow-[0_-4px_16px_rgba(0,0,0,0.15)]">
       {tabs.map(tab => (
         <button
           key={tab.id}
@@ -22,7 +22,7 @@ export default function BottomNav() {
           aria-label={tab.label}
           className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
             activeTab === tab.id
-              ? `${tab.activeColor} text-black border-2 border-black shadow-[2px_2px_0px_#000000] scale-105`
+              ? `${tab.activeColor} text-brand-black border-2 border-brand-black shadow-brutal-sm scale-105`
               : 'text-white hover:bg-white/10 border-2 border-transparent'
           }`}
         >

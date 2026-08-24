@@ -4,6 +4,30 @@
 @theme {
   --font-sans: "Space Grotesk", "Outfit", system-ui, sans-serif;
   --font-display: "Outfit", sans-serif;
+
+  --color-brand-pink: #FFD8E8;
+  --color-brand-black: #000000;
+  --color-brand-white: #FFFFFF;
+  --color-brand-cyan: #9BE9FB;
+  --color-brand-cyan-hover: #83DFEF;
+  --color-brand-lilac: #FAE8FF;
+  --color-brand-ice: #EBF8FF;
+  --color-brand-rose: #F6BED5;
+  --color-brand-danger: #CC0000;
+  --color-brand-danger-bright: #E02424;
+  --color-brand-off-white: #FBFBFB;
+  --color-brand-neutral: #F1F1F1;
+
+  --shadow-brutal-sm: 2px 2px 0 #000000;
+  --shadow-brutal: 4px 4px 0 #000000;
+  --shadow-brutal-lg: 8px 8px 0 #000000;
+}
+
+:root {
+  color: var(--color-brand-black);
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
 html,
@@ -16,5 +40,34 @@ body,
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: #FFD8E8;
+  background-color: var(--color-brand-pink);
+}
+
+::selection {
+  color: var(--color-brand-black);
+  background: var(--color-brand-cyan);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand-black);
+  outline-offset: 3px;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.tabular-number {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

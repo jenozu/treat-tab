@@ -40,7 +40,7 @@ function AppContent() {
   }, [activeModal, editingCustomerId, editingProductId, setActiveModal, setEditingCustomerId, setEditingProductId]);
 
   return (
-    <div className="w-full max-w-md bg-white h-full max-h-full md:h-[850px] md:max-h-[850px] md:min-h-[850px] md:rounded-3xl border-4 border-[#000000] shadow-[8px_8px_0px_#000000] overflow-hidden flex flex-col relative">
+    <div className="w-full max-w-md bg-brand-white h-full max-h-full md:h-[850px] md:max-h-[850px] md:min-h-[850px] md:rounded-3xl border-4 border-brand-black shadow-brutal-lg overflow-hidden flex flex-col relative">
       <Header />
 
       {globalError && (
@@ -52,9 +52,9 @@ function AppContent() {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto p-4 pb-4 space-y-4 bg-[#FFD8E8]/10 relative">
+      <main className="flex-1 overflow-y-auto p-4 pb-4 space-y-4 bg-brand-pink/10 relative">
         {buzzStatus && (
-          <div className="p-3.5 bg-[#9BE9FB] text-black rounded-xl border-2 border-black shadow-[2px_2px_0px_rgba(0,0,0,1)] flex items-center gap-2 mb-2 select-none z-30 animate-bounce">
+          <div className="p-3.5 bg-brand-cyan text-brand-black rounded-xl border-2 border-brand-black shadow-brutal-sm flex items-center gap-2 mb-2 select-none z-30 animate-bounce">
             <Sparkles className="w-5 h-5 text-black" />
             <p className="text-xs font-black">{buzzStatus}</p>
           </div>
@@ -85,10 +85,10 @@ function AppShell() {
 
   if (isAuthLoading) {
     return (
-      <div className="h-dvh bg-[#FFD8E8] flex items-center justify-center">
+      <div className="h-dvh bg-brand-pink flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="p-3 bg-black rounded-2xl border-4 border-black shadow-[4px_4px_0px_#000000] animate-pulse">
-            <Store className="w-7 h-7 text-[#9BE9FB]" />
+          <div className="p-3 bg-brand-black rounded-2xl border-4 border-brand-black shadow-brutal animate-pulse">
+            <Store className="w-7 h-7 text-brand-cyan" />
           </div>
           <p className="text-xs font-black text-black/50 uppercase tracking-wider">Loading...</p>
         </div>
@@ -101,7 +101,7 @@ function AppShell() {
   }
 
   return (
-    <div className="h-dvh bg-[#FFD8E8] flex items-center justify-center font-sans antialiased p-0 md:py-8 md:px-4">
+    <div className="h-dvh bg-brand-pink flex items-center justify-center font-sans antialiased p-0 md:py-8 md:px-4">
       <AppProvider>
         <AppContent />
       </AppProvider>
